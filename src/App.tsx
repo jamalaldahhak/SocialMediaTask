@@ -1,7 +1,7 @@
-import React from 'react';
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import Nav from './components/Navbar/Nav';
 import Users from './components/Users/Users';
+import Todos from './components/Todos/Todos';
 
 // Layout يضم الـ Nav لجميع صفحات الإدارة
 const MainLayout = () => {
@@ -26,7 +26,7 @@ function App() {
         <Route path="/my-posts" element={<div>صفحة My Posts</div>} />
         <Route path="/posts" element={<div>صفحة Posts</div>} />
         <Route path="/albums" element={<div>صفحة Albums</div>} />
-        <Route path="/todos" element={<div>صفحة ToDo</div>} />
+        <Route path="/todos" element={<Todos />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
