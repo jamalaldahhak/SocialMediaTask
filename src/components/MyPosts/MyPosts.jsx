@@ -16,9 +16,15 @@ const MyPosts = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [title, setTitle] = useState('');
-  const [body, setBody] = useState('');
+  // حقول إضافة منشور جديد فقط
+  const [newTitle, setNewTitle] = useState('');
+  const [newBody, setNewBody] = useState('');
+
+  // حالة التعديل للمنشور المحدد
   const [editingPostId, setEditingPostId] = useState(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editBody, setEditBody] = useState('');
+
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -42,29 +48,21 @@ const MyPosts = () => {
     }
   };
 
-  // معالجة الإضافة والتعديل
-  const handleSubmit = async (e) => {
+  // إنشاء منشور جديد
+  const handleCreateSubmit = async (e) => {
     e.preventDefault();
-    if (!title.trim() || !body.trim()) return;
+    if (!newTitle.trim() || !newBody.trim()) return;
 
     try {
       setSubmitting(true);
-      if (editingPostId) {
-        // تعديل منشور محدد
-        const updated = await updatePost(editingPostId, { title, body });
-        setPosts(posts.map((p) => (p.id === editingPostId ? updated : p)));
-        setEditingPostId(null);
-      } else {
-        // إضافة منشور جديد
-        const newPost = await createPost({
-          userId: selectedUser.id,
-          title,
-          body,
-        });
-        setPosts([newPost, ...posts]);
-      }
-      setTitle('');
-      setBody('');
+      const newPost = await createPost({
+        userId: selectedUser.id,
+        title: newTitle,
+        body: newBody,
+      });
+      setPosts([newPost, ...posts]);
+      setNewTitle('');
+      setNewBody('');
     } catch (err) {
       alert(err.message);
     } finally {
@@ -72,20 +70,46 @@ const MyPosts = () => {
     }
   };
 
+  // بداية عملية التعديل
   const handleEditClick = (post) => {
     setEditingPostId(post.id);
-    setTitle(post.title);
-    setBody(post.body);
+    setEditTitle(post.title);
+    setEditBody(post.body);
   };
 
+  // إلغاء التعديل
   const handleCancelEdit = () => {
     setEditingPostId(null);
-    setTitle('');
-    setBody('');
+    setEditTitle('');
+    setEditBody('');
+  };
+
+  // حفظ التعديل
+  const handleUpdateSubmit = async (postId) => {
+    if (!editTitle.trim() || !editBody.trim()) return;
+
+    try {
+      setSubmitting(true);
+      const updated = await updatePost(postId, {
+        title: editTitle,
+        body: editBody,
+      });
+      setPosts(posts.map((p) => (p.id === postId ? updated : p)));
+      setEditingPostId(null);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleDelete = async (postId) => {
-    if (!window.confirm('هل أنت تأكد من حذف المنشور وجميع التعليقات التابعة له؟')) return;
+    if (
+      !window.confirm(
+        'هل أنت تأكد من حذف المنشور وجميع التعليقات التابعة له؟'
+      )
+    )
+      return;
 
     try {
       await deletePostWithComments(postId);
@@ -111,8 +135,12 @@ const MyPosts = () => {
         {/* Header */}
         <div className="mb-8 flex items-center justify-between border-b border-slate-800 pb-4">
           <div>
-            <h1 className="text-2xl font-bold text-white">منشورات: {selectedUser.name}</h1>
-            <p className="text-xs text-slate-400">@{selectedUser.username} | ID: {selectedUser.id}</p>
+            <h1 className="text-2xl font-bold text-white">
+              منشورات: {selectedUser.name}
+            </h1>
+            <p className="text-xs text-slate-400">
+              @{selectedUser.username} | ID: {selectedUser.id}
+            </p>
           </div>
           <button
             onClick={() => navigate('/users')}
@@ -122,17 +150,20 @@ const MyPosts = () => {
           </button>
         </div>
 
-        {/* Form Create / Update */}
-        <form onSubmit={handleSubmit} className="mb-10 rounded-2xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl">
+        {/* Form Create New Post Only */}
+        <form
+          onSubmit={handleCreateSubmit}
+          className="mb-10 rounded-2xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl"
+        >
           <h2 className="mb-4 text-lg font-bold text-indigo-400">
-            {editingPostId ? 'تعديل المنشور' : 'إضافة منشور جديد'}
+            إضافة منشور جديد
           </h2>
           <div className="mb-4">
             <input
               type="text"
               placeholder="عنوان المنشور..."
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
               className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
               required
             />
@@ -140,62 +171,97 @@ const MyPosts = () => {
           <div className="mb-4">
             <textarea
               placeholder="محتوى المنشور..."
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
+              value={newBody}
+              onChange={(e) => setNewBody(e.target.value)}
               rows="4"
               className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
               required
             ></textarea>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              type="submit"
-              disabled={submitting}
-              className="rounded-xl bg-indigo-600 px-5 py-2 text-xs font-semibold text-white hover:bg-indigo-500 transition disabled:opacity-50"
-            >
-              {submitting ? 'جاري الحفظ...' : editingPostId ? 'حفظ التعديلات' : 'نشر المنشور'}
-            </button>
-            {editingPostId && (
-              <button
-                type="button"
-                onClick={handleCancelEdit}
-                className="rounded-xl bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-700 transition"
-              >
-                إلغاء
-              </button>
-            )}
-          </div>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="rounded-xl bg-indigo-600 px-5 py-2 text-xs font-semibold text-white hover:bg-indigo-500 transition disabled:opacity-50"
+          >
+            {submitting ? 'جاري النشر...' : 'نشر المنشور'}
+          </button>
         </form>
 
         {/* Posts List */}
         {error && <p className="mb-4 text-sm text-red-400">{error}</p>}
         {posts.length === 0 ? (
-          <p className="text-center text-sm text-slate-500">لا يوجد منشورات لهذا المستخدم حالياً.</p>
+          <p className="text-center text-sm text-slate-500">
+            لا يوجد منشورات لهذا المستخدم حالياً.
+          </p>
         ) : (
           <div className="space-y-4">
-            {posts.map((post) => (
-              <div
-                key={post.id}
-                className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5 transition hover:border-slate-700"
-              >
-                <h3 className="text-lg font-semibold text-white">{post.title}</h3>
-                <p className="mt-2 text-sm text-slate-300">{post.body}</p>
-                <div className="mt-4 flex items-center justify-end gap-3 border-t border-slate-800/60 pt-3">
-                  <button
-                    onClick={() => handleEditClick(post)}
-                    className="text-xs font-semibold text-indigo-400 hover:underline"
-                  >
-                    تعديل
-                  </button>
-                  <button
-                    onClick={() => handleDelete(post.id)}
-                    className="text-xs font-semibold text-red-400 hover:underline"
-                  >
-                    حذف مع التعليقات
-                  </button>
+            {posts.map((post) => {
+              const isEditing = editingPostId === post.id;
+
+              return (
+                <div
+                  key={post.id}
+                  className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5 transition hover:border-slate-700"
+                >
+                  {isEditing ? (
+                    /* شكل البطاقة عند التعديل */
+                    <div className="space-y-3">
+                      <input
+                        type="text"
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                      />
+                      <textarea
+                        value={editBody}
+                        onChange={(e) => setEditBody(e.target.value)}
+                        rows="3"
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                      ></textarea>
+                      <div className="flex items-center gap-2 justify-end pt-2">
+                        <button
+                          onClick={() => handleUpdateSubmit(post.id)}
+                          disabled={submitting}
+                          className="rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500 transition disabled:opacity-50"
+                        >
+                          {submitting ? 'جاري الحفظ...' : 'حفظ'}
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          className="rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-700 transition"
+                        >
+                          إلغاء
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    /* الشكل الطبيعي للمنشور */
+                    <>
+                      <h3 className="text-lg font-semibold text-white">
+                        {post.title}
+                      </h3>
+                      <p className="mt-2 text-sm text-slate-300">
+                        {post.body}
+                      </p>
+                      <div className="mt-4 flex items-center justify-end gap-3 border-t border-slate-800/60 pt-3">
+                        <button
+                          onClick={() => handleEditClick(post)}
+                          className="text-xs font-semibold text-indigo-400 hover:underline"
+                        >
+                          تعديل
+                        </button>
+                        <button
+                          onClick={() => handleDelete(post.id)}
+                          className="text-xs font-semibold text-red-400 hover:underline"
+                        >
+                          حذف مع التعليقات
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

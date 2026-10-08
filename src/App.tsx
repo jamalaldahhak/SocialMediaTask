@@ -4,6 +4,7 @@ import Users from './components/Users/Users';
 import MyPosts from './components/MyPosts/MyPosts';
 import Todos from './components/Todos/Todos';
 import Albums from './components/Albums/Albums';
+import AllPosts from './components/Posts/AllPosts';
 
 // Layout يضم الـ Nav لجميع صفحات الإدارة
 const MainLayout = () => {
@@ -26,7 +27,7 @@ function App() {
       {/* صفحات الإدارة الخاصة بالمستخدم المختار من الـ Context */}
       <Route element={<MainLayout />}>
         <Route path="/my-posts" element={<MyPosts />} />
-        <Route path="/posts" element={<div>صفحة Posts</div>} />
+        <Route path="/posts" element={<AllPosts />} />
         <Route path="/albums" element={<Albums />} />
         <Route path="/todos" element={<Todos />} />
       </Route>

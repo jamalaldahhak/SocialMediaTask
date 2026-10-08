@@ -1,10 +1,14 @@
 const BASE_URL = 'http://localhost:3000';
 export const getUserPosts = async (userId) => {
-  const res = await fetch(`${BASE_URL}/posts?userId=${userId}`);
+  const res = await fetch(`${BASE_URL}/posts?userId=${userId}&_sort=id`);
   if (!res.ok) throw new Error('فشل جلب منشورات المستخدم');
   return res.json();
 };
-
+export const getAllPosts = async () => {
+  const res = await fetch(`${BASE_URL}/posts?`);
+  if (!res.ok) throw new Error('فشل جلب كافة المنشورات');
+  return res.json();
+};
 export const createPost = async (postData) => {
   const res = await fetch(`${BASE_URL}/posts`, {
     method: 'POST',
@@ -85,4 +89,68 @@ export const deleteAlbumWithPhotos = async (albumId) => {
   });
   if (!res.ok) throw new Error('فشل حذف الألبوم');
   return true;
+};
+
+// جلب جميع المستخدمين (لإظهار بيانات صاحب المنشور/التعليق)
+export const getAllUsers = async () => {
+  const res = await fetch(`${BASE_URL}/users`);
+  if (!res.ok) throw new Error('فشل جلب المستخدمين');
+  return res.json();
+};
+
+// جلب تعليقات منشور معين
+export const getCommentsByPostId = async (postId) => {
+  const res = await fetch(`${BASE_URL}/comments?postId=${postId}`);
+  if (!res.ok) throw new Error('فشل جلب التعليقات');
+  return res.json();
+};
+
+// إضافة تعليق جديد
+export const createComment = async (commentData) => {
+  const res = await fetch(`${BASE_URL}/comments`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(commentData),
+  });
+  if (!res.ok) throw new Error('فشل إضافة التعليق');
+  return res.json();
+};
+
+export const deleteComment = async (commentId) => {
+  try {
+    const response = await fetch(`${BASE_URL}/comments/${commentId}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      throw new Error('فشل في حذف التعليق');
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error deleting comment:', error);
+    throw error;
+  }
+};
+
+// دالة تعديل تعليق (PATCH للتعديل الجزئي)
+export const updateComment = async (commentId, data) => {
+  try {
+    const response = await fetch(`${BASE_URL}/comments/${commentId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      throw new Error('فشل في تعديل التعليق');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating comment:', error);
+    throw error;
+  }
 };
